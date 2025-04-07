@@ -90,7 +90,7 @@ export default {
           <img :src="product.images" alt="Smartphone XYZ Pro">
         </div>
         <div class="product-details">
-          <span class="product-badge">Reconditionné</span>
+          <span class="product-badge">Neuf</span>
           <h1 class="product-title">{{ product.name }}</h1>
           <div class="product-description">
             <p>{{ product.description }}</p>
@@ -170,10 +170,6 @@ export default {
         </div>
       </section>
     </div>
-    <h1>{{ product.name }}</h1>
-    <p>{{ product.description }}</p>
-    <p>{{ product.price }}</p>
-    <span>{{ product.stock }}</span>
   </div>
 </template>
 

@@ -21,7 +21,7 @@
                 v-model="email"
                 placeholder="votre@email.com"
                 required
-                :class="{ 'error': emailError }"
+                :class="{ 'error': emailError || authError }"
             >
           </div>
           <p class="error-message" v-if="emailError">{{ emailError }}</p>
@@ -37,7 +37,7 @@
                 v-model="password"
                 placeholder="Votre mot de passe"
                 required
-                :class="{ 'error': passwordError }"
+                :class="{ 'error': passwordError || authError }"
             >
             <button
                 type="button"
@@ -49,6 +49,7 @@
             </button>
           </div>
           <p class="error-message" v-if="passwordError">{{ passwordError }}</p>
+          <p class="error-message" v-if="authError && !emailError && !passwordError">{{ authError }}</p>
         </div>
 
         <div class="form-options">
@@ -59,8 +60,8 @@
           <router-link to="/reset-password" class="forgot-password">Mot de passe oublié ?</router-link>
         </div>
 
-        <button type="submit" class="login-btn" :disabled="isLoading">
-          <span v-if="isLoading" class="spinner"></span>
+        <button type="submit" class="login-btn" :disabled="isAuthLoading">
+          <span v-if="isAuthLoading" class="spinner"></span>
           <span v-else>Se connecter</span>
         </button>
       </form>
@@ -108,6 +109,8 @@
 </template>
 
 <script>
+import { mapActions, mapGetters } from 'vuex';
+
 export default {
   name: 'LoginPage',
   data() {
@@ -116,12 +119,21 @@ export default {
       password: '',
       rememberMe: false,
       showPassword: false,
-      isLoading: false,
       emailError: '',
       passwordError: ''
     };
   },
+  computed: {
+    ...mapGetters({
+      authError: 'auth/authError',
+      isAuthLoading: 'auth/isLoading',
+      isAuthenticated: 'auth/isAuthenticated'
+    })
+  },
   methods: {
+    ...mapActions({
+      login: 'auth/login'
+    }),
     validateForm() {
       let isValid = true;
       this.emailError = '';
@@ -140,9 +152,6 @@ export default {
       if (!this.password) {
         this.passwordError = 'Veuillez saisir votre mot de passe';
         isValid = false;
-      } else if (this.password.length < 6) {
-        this.passwordError = 'Le mot de passe doit contenir au moins 6 caractères';
-        isValid = false;
       }
 
       return isValid;
@@ -156,35 +165,41 @@ export default {
         return;
       }
 
-      this.isLoading = true;
+      // Appel de l'action login du store Vuex
+      const result = await this.login({
+        email: this.email,
+        password: this.password,
+        rememberMe: this.rememberMe
+      });
 
-      try {
-        // Simuler un délai d'API pour l'exemple (à remplacer par un vrai appel API)
-        await new Promise(resolve => setTimeout(resolve, 1500));
+      if (result.success) {
+        // Récupérer la route de redirection si elle existe
+        const redirectPath = this.$route.query.redirect || '/compte';
 
-        // À remplacer par votre logique de connexion réelle
-        // Par exemple:
-        // const response = await this.$store.dispatch('auth/login', {
-        //   email: this.email,
-        //   password: this.password,
-        //   rememberMe: this.rememberMe
-        // });
-
-        // Redirection après connexion
-        this.$router.push('/compte');
-
-      } catch (error) {
-        console.error('Erreur de connexion:', error);
-        // Gérer les erreurs de connexion
-        if (error.response && error.response.status === 401) {
-          this.passwordError = 'Email ou mot de passe incorrect';
-        } else {
-          alert('Une erreur est survenue lors de la connexion. Veuillez réessayer.');
-        }
-      } finally {
-        this.isLoading = false;
+        // Redirection après connexion réussie
+        this.$router.push(redirectPath);
       }
     }
+  },
+  mounted() {
+    // Si l'utilisateur est déjà connecté, le rediriger
+    if (this.isAuthenticated) {
+      this.$router.push('/compte');
+      return;
+    }
+
+    // Récupérer l'email mémorisé si "Se souvenir de moi" était coché
+    const rememberedEmail = localStorage.getItem('remembered_email');
+    if (rememberedEmail) {
+      this.email = rememberedEmail;
+      this.rememberMe = true;
+    }
+  },
+  // Si la personne arrive sur la page via un lien de redirection après un échec d'authentification
+  // on efface l'erreur d'auth lorsqu'elle quitte la page
+  beforeRouteLeave(to, from, next) {
+    this.$store.commit('auth/CLEAR_ERROR');
+    next();
   }
 };
 </script>
@@ -369,72 +384,6 @@ export default {
   100% { transform: rotate(360deg); }
 }
 
-.social-login {
-  margin-top: 2rem;
-}
-
-.divider {
-  text-align: center;
-  position: relative;
-  color: #999;
-  margin-bottom: 1.5rem;
-}
-
-.divider::before,
-.divider::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 45%;
-  height: 1px;
-  background-color: #ddd;
-}
-
-.divider::before {
-  left: 0;
-}
-
-.divider::after {
-  right: 0;
-}
-
-.divider span {
-  background-color: white;
-  padding: 0 15px;
-  position: relative;
-  z-index: 1;
-}
-
-.social-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-}
-
-.social-btn {
-  flex: 1;
-  max-width: 150px;
-  padding: 0.8rem 1rem;
-  border: 1px solid #ddd;
-  background-color: white;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.google:hover {
-  background-color: #f8f8f8;
-  border-color: #4285F4;
-  color: #4285F4;
-}
-
-.facebook:hover {
-  background-color: #f8f8f8;
-  border-color: #3b5998;
-  color: #3b5998;
-}
-
 .register-option {
   margin-top: 2rem;
   text-align: center;
@@ -523,15 +472,6 @@ export default {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
-  }
-
-  .social-buttons {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .social-btn {
-    max-width: none;
   }
 }
 </style>

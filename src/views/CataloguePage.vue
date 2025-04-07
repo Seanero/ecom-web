@@ -190,7 +190,7 @@
     <div v-else class="products-grid">
       <div v-for="product in paginatedProducts" :key="product._id" class="product-card">
         <span class="category-tag">{{ getCategoryName(product.category) }}</span>
-        <router-link :to="`/product/${product._id}`" class="product-image-link">
+        <router-link :to="`/produit/${product._id}`" class="product-image-link">
           <div class="product-image-container">
             <img
                 :src="product.images !== 'non' ? product.images : '/api/placeholder/300/300'"
