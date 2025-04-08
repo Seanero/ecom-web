@@ -35,6 +35,7 @@
                   </div>
                   <router-link to="/compte">Mon Compte</router-link>
 <!--                  <router-link to="/commandes">Mes Commandes</router-link>-->
+                  <router-link to="/admin" v-if="isAdmin">Panel Administrateur</router-link>
                   <a href="#" @click.prevent="deconnecter">Déconnexion</a>
                 </div>
               </div>
@@ -62,7 +63,13 @@ export default {
     ]),
     ...mapGetters('cart', [
         'cartItemCount'
-    ])
+    ]),
+
+    isAdmin() {
+      if (!this.user) return false;
+      const role = this.user.role || (this.user.user && this.user.user.role);
+      return this.isAuthenticated && role === 'admin';
+    },
   },
   methods: {
     ...mapActions('auth', [

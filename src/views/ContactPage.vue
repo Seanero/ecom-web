@@ -170,6 +170,7 @@
 
 <script>
 // Importer Leaflet
+import axios from "axios";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
@@ -333,8 +334,17 @@ export default {
       this.isSubmitting = true;
 
       try {
-        // Simulation d'un appel API (à remplacer par votre véritable appel API)
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        const payload = {
+          fullname: this.formData.name.trim(),
+          email: this.formData.email.trim(),
+          phone: this.formData.phone.trim(),
+          subject: this.formData.subject,
+          message: this.formData.message.trim()
+        };
+
+        const apiUrl = this.$store.state.apiUrl;
+
+        await axios.post(`${apiUrl}/contact/create`, payload);
 
         // Affichage du message de confirmation
         this.formSubmitted = true;
@@ -349,8 +359,8 @@ export default {
           privacy: false
         };
       } catch (error) {
-        console.error('Erreur lors de l\'envoi du formulaire:', error);
-        alert('Une erreur est survenue lors de l\'envoi du formulaire. Veuillez réessayer plus tard.');
+        console.error("Erreur lors de l'envoi :", error);
+        alert(error.response?.data?.error || "Une erreur est survenue. Veuillez réessayer plus tard.");
       } finally {
         this.isSubmitting = false;
       }

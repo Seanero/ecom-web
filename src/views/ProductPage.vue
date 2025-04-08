@@ -100,26 +100,23 @@ export default {
           <h1 class="product-title">{{ product.name }}</h1>
           <div class="product-description">
             <p>{{ product.description }}</p>
-            <!--<ul style="margin-top: 1rem; margin-left: 1.5rem;">
-              <li>Écran OLED 6.5" haute résolution</li>
-              <li>Processeur octa-core ultra rapide</li>
-              <li>Mémoire : 8GB RAM, 256GB de stockage</li>
-              <li>Batterie remplacée à 100% de capacité</li>
-              <li>Triple caméra arrière 48MP + 12MP + 8MP</li>
-              <li>Système d'exploitation dernier en date</li>
-            </ul>-->
           </div>
           <p class="product-price">{{ product.price }} €</p>
-          <p class="product-stock stock-available" v-if="product.stock >= 50">En stock : {{ product.stock }} unités disponibles</p>
-          <p class="product-stock stock-limited" v-else-if="1 <= product.stock < 50">En stock : {{ product.stock }} unités disponibles</p>
-          <p class="product-stock stock-unavailable" v-else>Hors stock : {{ product.stock }} unités disponibles</p>
+          <p class="product-stock stock-available" v-if="product.stock >= 50">
+            En stock : {{ product.stock }} unités disponibles
+          </p>
+          <p class="product-stock stock-limited" v-else-if="product.stock >= 1 && product.stock < 50">
+            En stock : {{ product.stock }} unités disponibles
+          </p>
+          <p class="product-stock stock-unavailable" v-else>
+            Hors stock : {{ product.stock }} unités disponibles
+          </p>
           <div class="quantity-selector">
             <label for="quantity">Quantité :</label>
             <input type="number" id="quantity" name="quantity" min="1" :max="product.stock" value="1">
           </div>
           <div class="product-actions">
             <button class="btn add-to-cart" @click="addToCart(product)">Ajouter au panier</button>
-            <button class="btn add-to-wishlist">❤ Wishlist</button>
           </div>
           <div class="product-meta">
             <p><strong>Catégorie :</strong> {{ category.name }}</p>
@@ -129,52 +126,6 @@ export default {
           </div>
         </div>
       </main>
-
-      <section class="similar-products">
-        <h2 class="section-title">Produits Similaires</h2>
-        <div class="cards">
-          <div class="card product-card">
-            <span class="product-badge">Reconditionné</span>
-            <img src="../assets/img/img.png" alt="Smartphone ABC" class="card-img">
-            <div class="card-content">
-              <h3 class="card-title">Smartphone ABC - Bon État</h3>
-              <p>Écran 6.1", 128GB, batterie 95%</p>
-              <p class="price">299 €</p>
-              <a href="#" class="btn">Voir le produit</a>
-            </div>
-          </div>
-          <div class="card product-card">
-            <span class="product-badge">Reconditionné</span>
-            <img src="../assets/img/img.png" alt="Smartphone DEF" class="card-img">
-            <div class="card-content">
-              <h3 class="card-title">Smartphone DEF - Excellent État</h3>
-              <p>Écran 6.3", 256GB, batterie neuve</p>
-              <p class="price">359 €</p>
-              <a href="#" class="btn">Voir le produit</a>
-            </div>
-          </div>
-          <div class="card product-card">
-            <span class="product-badge">Éco-conçu</span>
-            <img src="../assets/img/img.png" alt="Smartphone GHI" class="card-img">
-            <div class="card-content">
-              <h3 class="card-title">Smartphone GHI - Neuf</h3>
-              <p>Écran 6.2", 128GB, 3 ans de MAJ garanties</p>
-              <p class="price">499 €</p>
-              <a href="#" class="btn">Voir le produit</a>
-            </div>
-          </div>
-          <div class="card product-card">
-            <span class="product-badge">Reconditionné</span>
-            <img src="../assets/img/img.png" alt="Smartphone JKL" class="card-img">
-            <div class="card-content">
-              <h3 class="card-title">Smartphone JKL - Comme Neuf</h3>
-              <p>Écran 6.7", 512GB, haut de gamme</p>
-              <p class="price">599 €</p>
-              <a href="#" class="btn">Voir le produit</a>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   </div>
 </template>

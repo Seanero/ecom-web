@@ -505,7 +505,7 @@ export default {
 
           if (loginResult && loginResult.success) {
             // Redirection vers la page d'accueil ou le tableau de bord
-            this.$router.push('/mon-compte');
+            this.$router.push('/compte');
           } else {
             // Redirection vers la page de connexion si l'authentification automatique échoue
             this.$router.push({

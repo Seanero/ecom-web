@@ -30,9 +30,17 @@
             </svg>
             Actualiser
           </button>
-          <span class="admin-user">Connecté en tant que: {{ user.firstname }} {{ user.lastname }}</span>
+          <span class="admin-user">Connecté en tant que: {{ user.user.firstname }} {{ user.user.lastname }}</span>
         </div>
       </header>
+
+      <!-- Affichage des erreurs -->
+      <div v-if="error || localError" class="error-alert">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 256 256">
+          <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm-8-80V80a8,8,0,0,1,16,0v56a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,172Z"></path>
+        </svg>
+        {{ error || localError }}
+      </div>
 
       <!-- Navigation du dashboard -->
       <div class="admin-navigation">
@@ -40,7 +48,7 @@
             v-for="tab in tabs"
             :key="tab.id"
             :class="['admin-nav-item', { active: activeTab === tab.id }]"
-            @click="activeTab = tab.id"
+            @click="activeTab = tab.id "
         >
           <span class="admin-nav-icon" v-html="tab.icon"></span>
           <span class="admin-nav-text">{{ tab.label }}</span>
@@ -78,7 +86,7 @@
               <tr>
                 <th>ID</th>
                 <th>Nom</th>
-                <th>Nombre de produits</th>
+                <th>Description</th>
                 <th>Actions</th>
               </tr>
               </thead>
@@ -89,7 +97,7 @@
               <tr v-for="category in filteredCategories" :key="category._id">
                 <td>{{ category._id }}</td>
                 <td>{{ category.name }}</td>
-                <td>{{ category.productCount || 0 }}</td>
+                <td>{{ category.description }}</td>
                 <td class="action-cell">
                   <button class="btn-icon edit" @click="openCategoryModal(category)">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256">
@@ -160,7 +168,7 @@
               <tr v-for="product in filteredProducts" :key="product._id">
                 <td class="img-cell">
                   <div class="product-image">
-                    <img v-if="product.images" :src="product.images" :alt="product.title">
+                    <img v-if="product.images" :src="product.images" :alt="product.name">
                     <div v-else class="image-placeholder">
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 256 256">
                         <path d="M208,40H48A16,16,0,0,0,32,56V200a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V56A16,16,0,0,0,208,40ZM48,56H208v80H176L156,116a8,8,0,0,0-13.66,1.69L128.68,144H92a8,8,0,0,0-5.65,2.34L67.59,136H48ZM208,200H48V164.3l25.63,8.56a8,8,0,0,0,9.18-2.94L98.53,160h36a8,8,0,0,0,6.56-3.43L155.73,136H208v64Z"></path>
@@ -168,7 +176,7 @@
                     </div>
                   </div>
                 </td>
-                <td>{{ product.title }}</td>
+                <td>{{ product.name }}</td>
                 <td>{{ getCategoryName(product.category) }}</td>
                 <td>{{ formatPrice(product.price) }}</td>
                 <td :class="getStockClass(product.stock)">{{ product.stock }}</td>
@@ -279,7 +287,7 @@
                   <button
                       class="btn-icon reset-password"
                       @click="resetUserPassword(user._id)"
-                      title="Réinitialiser le mot de passe"
+                      title="Modifier le mot de passe"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256">
                       <path d="M208,80H172V56a44,44,0,0,0-88,0v24H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM100,56a28,28,0,0,1,56,0v24H100ZM208,208H48V96H208V208Zm-100-80a12,12,0,1,1,12,12A12,12,0,0,1,108,128Z"></path>
@@ -290,6 +298,60 @@
                       class="btn-icon delete"
                       @click="deleteUser(user._id)"
                   >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256">
+                      <path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"></path>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Gestion des formulaires de contact -->
+        <div v-if="activeTab === 'contactForm'" class="admin-section">
+          <div class="section-header">
+            <h2>Formulaires de contact</h2>
+          </div>
+
+          <!-- Recherche -->
+          <div class="search-box">
+            <input
+                type="text"
+                v-model="contactSearch"
+                placeholder="Rechercher un nom, email ou sujet..."
+                class="search-input"
+            >
+          </div>
+
+          <!-- Liste des contacts -->
+          <div class="data-table">
+            <table>
+              <thead>
+              <tr>
+                <th>Nom</th>
+                <th>Email</th>
+                <th>Téléphone</th>
+                <th>Sujet</th>
+                <th>Message</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr v-if="filteredContacts.length === 0">
+                <td colspan="7" class="empty-table">Aucun message trouvé</td>
+              </tr>
+              <tr v-for="contact in filteredContacts" :key="contact._id">
+                <td>{{ contact.fullname }}</td>
+                <td>{{ contact.email }}</td>
+                <td>{{ contact.phone }}</td>
+                <td>{{ contact.subject }}</td>
+                <td>{{ contact.message }}</td>
+                <td>{{ formatDate(contact.createdAt) }}</td>
+                <td class="action-cell">
+                  <button class="btn-icon delete" @click="deleteContact(contact._id)">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256">
                       <path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"></path>
                     </svg>
@@ -351,11 +413,11 @@
           <form @submit.prevent="saveProduct">
             <div class="form-row">
               <div class="form-group">
-                <label for="product-title">Titre du produit</label>
+                <label for="product-name">Nom du produit</label>
                 <input
                     type="text"
-                    id="product-title"
-                    v-model="productForm.title"
+                    id="product-name"
+                    v-model="productForm.name"
                     required
                     class="form-control"
                 >
@@ -411,16 +473,48 @@
               ></textarea>
             </div>
             <div class="form-group">
-              <label for="product-image">Image URL</label>
-              <input
-                  type="text"
-                  id="product-image"
-                  v-model="productForm.image"
-                  class="form-control"
-                  placeholder="http://example.com/image.jpg"
-              >
-              <div class="image-preview" v-if="productForm.image">
-                <img :src="productForm.image" alt="Aperçu du produit">
+              <label>Image du produit</label>
+              <div class="image-input-container">
+                <div class="image-input-tabs">
+                  <button type="button"
+                          :class="['tab-btn', { active: imageInputType === 'url' }]"
+                          @click="imageInputType = 'url'">
+                    URL
+                  </button>
+                  <button type="button"
+                          :class="['tab-btn', { active: imageInputType === 'upload' }]"
+                          @click="imageInputType = 'upload'">
+                    Upload
+                  </button>
+                </div>
+
+                <!-- URL Input -->
+                <div v-if="imageInputType === 'url'" class="url-input">
+                  <input
+                      type="text"
+                      id="product-image-url"
+                      v-model="productForm.images"
+                      class="form-control"
+                      placeholder="http://example.com/image.jpg"
+                  >
+                </div>
+
+                <!-- File Upload Input -->
+                <div v-else class="file-input">
+                  <input
+                      type="file"
+                      id="product-image-file"
+                      @change="handleImageUpload"
+                      accept="image/*"
+                      class="form-control"
+                  >
+                  <p class="form-hint">Format supportés: JPG, PNG, GIF. Max: 2MB</p>
+                </div>
+
+                <!-- Image Preview -->
+                <div class="image-preview" v-if="productForm.images">
+                  <img :src="productForm.images" alt="Aperçu du produit">
+                </div>
               </div>
             </div>
             <div class="form-actions">
@@ -433,62 +527,149 @@
     </div>
 
     <!-- Modal pour utilisateur -->
+    <!-- Modal pour utilisateur avec adresse de facturation -->
     <div v-if="showUserModal" class="modal-overlay">
-      <div class="modal-container">
+      <div class="modal-container user-modal">
         <div class="modal-header">
           <h3>Modifier l'utilisateur</h3>
           <button class="btn-close" @click="showUserModal = false">×</button>
         </div>
         <div class="modal-body">
           <form @submit.prevent="saveUser">
-            <div class="form-row">
+            <!-- Onglets d'information -->
+            <div class="user-tabs">
+              <button type="button"
+                      :class="['tab-btn', { active: userTabActive === 'info' }]"
+                      @click="userTabActive = 'info'">
+                Informations
+              </button>
+              <button type="button"
+                      :class="['tab-btn', { active: userTabActive === 'address' }]"
+                      @click="userTabActive = 'address'">
+                Adresse de facturation
+              </button>
+            </div>
+
+            <!-- Informations utilisateur -->
+            <div v-if="userTabActive === 'info'">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="user-firstname">Prénom</label>
+                  <input
+                      type="text"
+                      id="user-firstname"
+                      v-model="userForm.firstname"
+                      required
+                      class="form-control"
+                  >
+                </div>
+                <div class="form-group">
+                  <label for="user-lastname">Nom</label>
+                  <input
+                      type="text"
+                      id="user-lastname"
+                      v-model="userForm.lastname"
+                      required
+                      class="form-control"
+                  >
+                </div>
+              </div>
               <div class="form-group">
-                <label for="user-firstname">Prénom</label>
+                <label for="user-email">Email</label>
                 <input
-                    type="text"
-                    id="user-firstname"
-                    v-model="userForm.firstname"
+                    type="email"
+                    id="user-email"
+                    v-model="userForm.email"
                     required
                     class="form-control"
                 >
               </div>
               <div class="form-group">
-                <label for="user-lastname">Nom</label>
-                <input
-                    type="text"
-                    id="user-lastname"
-                    v-model="userForm.lastname"
+                <label for="user-role">Rôle</label>
+                <select
+                    id="user-role"
+                    v-model="userForm.role"
                     required
                     class="form-control"
+                    :disabled="userForm._id === currentUserId"
+                >
+                  <option value="user">Utilisateur</option>
+                  <option value="admin">Administrateur</option>
+                </select>
+                <div class="form-hint" v-if="userForm._id === currentUserId">
+                  Vous ne pouvez pas modifier votre propre rôle.
+                </div>
+              </div>
+            </div>
+
+            <!-- Adresse de facturation -->
+            <div v-if="userTabActive === 'address'">
+              <div class="form-group">
+                <label for="address-line1">Adresse ligne 1</label>
+                <input
+                    type="text"
+                    id="address-line1"
+                    v-model="userForm.invoiceAddress.line1"
+                    required
+                    class="form-control"
+                    placeholder="Rue, numéro"
                 >
               </div>
-            </div>
-            <div class="form-group">
-              <label for="user-email">Email</label>
-              <input
-                  type="email"
-                  id="user-email"
-                  v-model="userForm.email"
-                  required
-                  class="form-control"
-              >
-            </div>
-            <div class="form-group">
-              <label for="user-role">Rôle</label>
-              <select
-                  id="user-role"
-                  v-model="userForm.role"
-                  required
-                  class="form-control"
-                  :disabled="userForm._id === currentUserId"
-              >
-                <option value="user">Utilisateur</option>
-                <option value="admin">Administrateur</option>
-              </select>
-              <div class="form-hint" v-if="userForm._id === currentUserId">
-                Vous ne pouvez pas modifier votre propre rôle.
+              <div class="form-group">
+                <label for="address-line2">Adresse ligne 2 <span class="optional">(optionnel)</span></label>
+                <input
+                    type="text"
+                    id="address-line2"
+                    v-model="userForm.invoiceAddress.line2"
+                    class="form-control"
+                    placeholder="Complément d'adresse"
+                >
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="address-postal">Code postal</label>
+                  <input
+                      type="text"
+                      id="address-postal"
+                      v-model="userForm.invoiceAddress.postalCode"
+                      required
+                      class="form-control"
+                  >
+                </div>
+                <div class="form-group">
+                  <label for="address-city">Ville</label>
+                  <input
+                      type="text"
+                      id="address-city"
+                      v-model="userForm.invoiceAddress.city"
+                      required
+                      class="form-control"
+                  >
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="address-state">Département/État <span class="optional">(optionnel)</span></label>
+                  <input
+                      type="text"
+                      id="address-state"
+                      v-model="userForm.invoiceAddress.stateOrDepartment"
+                      class="form-control"
+                  >
+                </div>
+                <div class="form-group">
+                  <label for="address-country">Pays</label>
+                  <input
+                      type="text"
+                      id="address-country"
+                      v-model="userForm.invoiceAddress.country"
+                      required
+                      class="form-control"
+                  >
+                </div>
               </div>
             </div>
+
             <div class="form-actions">
               <button type="button" class="btn-secondary" @click="showUserModal = false">Annuler</button>
               <button type="submit" class="btn-primary">Enregistrer</button>
@@ -497,12 +678,63 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal pour réinitialisation de mot de passe -->
+    <div v-if="showPasswordResetModal" class="modal-overlay">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h3>Réinitialiser le mot de passe</h3>
+          <button class="btn-close" @click="showPasswordResetModal = false">×</button>
+        </div>
+        <div class="modal-body">
+          <form @submit.prevent="saveNewPassword">
+            <div class="form-group">
+              <label for="new-password">Nouveau mot de passe</label>
+              <input
+                  type="password"
+                  id="new-password"
+                  v-model="passwordForm.newPassword"
+                  required
+                  class="form-control"
+                  minlength="3"
+              >
+            </div>
+            <div class="form-group">
+              <label for="confirm-password">Confirmer le mot de passe</label>
+              <input
+                  type="password"
+                  id="confirm-password"
+                  v-model="passwordForm.confirmPassword"
+                  required
+                  class="form-control"
+                  minlength="3"
+              >
+              <div v-if="passwordForm.newPassword !== passwordForm.confirmPassword && passwordForm.confirmPassword"
+                   class="error-text">
+                Les mots de passe ne correspondent pas
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn-secondary" @click="showPasswordResetModal = false">Annuler</button>
+              <button
+                  type="submit"
+                  class="btn-primary"
+                  :disabled="passwordForm.newPassword !== passwordForm.confirmPassword || !passwordForm.newPassword">
+                Enregistrer
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+
   </div>
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
-import axios from 'axios';
+// Modification du script dans AdminDashboard.vue
+import { mapGetters, mapState } from 'vuex';
 
 export default {
   name: 'AdminDashboard',
@@ -510,11 +742,6 @@ export default {
     return {
       isLoading: true,
       activeTab: 'categories',
-
-      // Données
-      categories: [],
-      products: [],
-      users: [],
 
       // Filtres et recherche
       categorySearch: '',
@@ -531,6 +758,13 @@ export default {
       showCategoryModal: false,
       showProductModal: false,
       showUserModal: false,
+      showPasswordResetModal: false,
+
+      // Type d'entrée d'image (url ou upload)
+      imageInputType: 'url',
+
+      // Pour les onglets de la modal utilisateur
+      userTabActive: 'info',
 
       editingCategoryId: null,
       editingProductId: null,
@@ -541,12 +775,12 @@ export default {
       },
 
       productForm: {
-        title: '',
+        name: '',
         description: '',
         price: 0,
         stock: 0,
         category: '',
-        image: ''
+        images: ''
       },
 
       userForm: {
@@ -554,38 +788,84 @@ export default {
         firstname: '',
         lastname: '',
         email: '',
-        role: 'user'
+        role: 'user',
+        invoiceAddress: {
+          line1: '',
+          line2: '',
+          postalCode: '',
+          city: '',
+          stateOrDepartment: '',
+          country: ''
+        }
       },
+
+      // Pour le modal de réinitialisation de mot de passe
+      passwordForm: {
+        userId: '',
+        newPassword: '',
+        confirmPassword: '',
+        currentPassword: '' // Pour les admin, pas nécessaire de fournir l'ancien mot de passe
+      },
+
+      contactSearch: '',
 
       // Configuration des onglets
       tabs: [
         {
           id: 'categories',
           label: 'Catégories',
-          icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 256 256"><path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48ZM32,64H168V192H40a8,8,0,0,1-8-8Zm192,128a8,8,0,0,1-8,8H184V64h40Z"></path></svg>'
+          icon: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#000000" viewBox="0 0 256 256"><path d="M208,32H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32Zm0,16V152h-28.7A15.86,15.86,0,0,0,168,156.69L148.69,176H107.31L88,156.69A15.86,15.86,0,0,0,76.69,152H48V48Zm0,160H48V168H76.69L96,187.31A15.86,15.86,0,0,0,107.31,192h41.38A15.86,15.86,0,0,0,160,187.31L179.31,168H208v40Z"></path></svg>'
         },
         {
           id: 'products',
           label: 'Produits',
-          icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 256 256"><path d="M243.32,148.35l-14.43-14.43a24,24,0,0,0-31.94-1.38l-54.65-54.65h0L127.94,63.52h0L116.69,74.77,54.49,12.57a8,8,0,0,0-11.15-.19L26.4,26.33a8,8,0,0,0,.25,11.62L60.82,69.58,27.31,103.08a8,8,0,0,0,0,11.31l54.3,54.31a8,8,0,0,0,11.31,0l33.51-33.51,15.67,15.67a24,24,0,0,0,1.37,31.94l14.43,14.43a24,24,0,0,0,33.94,0l51.48-51.48A24,24,0,0,0,243.32,148.35Zm-175.1-57L91.85,83.69,44.49,26.33,54.49,20.1l83.57,83.58-10.1,10.1ZM83.23,157,38.63,112.39,67,84l11.32,11.31,18.39,18.39L126,142.93Zm137.47-2.31L169.22,206.14a8,8,0,0,1-11.31,0l-14.43-14.43a8,8,0,0,1,0-11.31l51.48-51.48a8,8,0,0,1,11.31,0l14.43,14.43A8,8,0,0,1,220.7,154.66Z"></path></svg>'
+          icon: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#000000" viewBox="0 0 256 256"><path d="M232,48V88a8,8,0,0,1-16,0V56H184a8,8,0,0,1,0-16h40A8,8,0,0,1,232,48ZM72,200H40V168a8,8,0,0,0-16,0v40a8,8,0,0,0,8,8H72a8,8,0,0,0,0-16Zm152-40a8,8,0,0,0-8,8v32H184a8,8,0,0,0,0,16h40a8,8,0,0,0,8-8V168A8,8,0,0,0,224,160ZM32,96a8,8,0,0,0,8-8V56H72a8,8,0,0,0,0-16H32a8,8,0,0,0-8,8V88A8,8,0,0,0,32,96ZM80,80a8,8,0,0,0-8,8v80a8,8,0,0,0,16,0V88A8,8,0,0,0,80,80Zm104,88V88a8,8,0,0,0-16,0v80a8,8,0,0,0,16,0ZM144,80a8,8,0,0,0-8,8v80a8,8,0,0,0,16,0V88A8,8,0,0,0,144,80Zm-32,0a8,8,0,0,0-8,8v80a8,8,0,0,0,16,0V88A8,8,0,0,0,112,80Z"></path></svg>'
         },
         {
           id: 'users',
           label: 'Utilisateurs',
-          icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 256 256"><path d="M125.18,156.94a64,64,0,1,0-82.36,0,100.23,100.23,0,0,0-39.49,32,12,12,0,0,0,19.35,14.2,76,76,0,0,1,122.64,0,12,12,0,0,0,19.36-14.2A100.33,100.33,0,0,0,125.18,156.94ZM44,108a40,40,0,1,1,40,40A40,40,0,0,1,44,108Zm206.1,97.67a12,12,0,0,1-16.78-2.58A76.31,76.31,0,0,0,172,172a12,12,0,0,1,0-24,40,40,0,1,0-14.85-77.16,12,12,0,1,1-8.92-22.28,64,64,0,0,1,65,108.38,100.23,100.23,0,0,1,39.49,32A12,12,0,0,1,250.1,205.67Z"></path></svg>'
+          icon: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#000000" viewBox="0 0 256 256"><path d="M117.25,157.92a60,60,0,1,0-66.5,0A95.83,95.83,0,0,0,3.53,195.63a8,8,0,1,0,13.4,8.74,80,80,0,0,1,134.14,0,8,8,0,0,0,13.4-8.74A95.83,95.83,0,0,0,117.25,157.92ZM40,108a44,44,0,1,1,44,44A44.05,44.05,0,0,1,40,108Zm210.14,98.7a8,8,0,0,1-11.07-2.33A79.83,79.83,0,0,0,172,168a8,8,0,0,1,0-16,44,44,0,1,0-16.34-84.87,8,8,0,1,1-5.94-14.85,60,60,0,0,1,55.53,105.64,95.83,95.83,0,0,1,47.22,37.71A8,8,0,0,1,250.14,206.7Z"></path></svg>'
+        },
+        {
+          id: 'contactForm',
+          label: 'Formulaires de contact',
+          icon: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#000000" viewBox="0 0 256 256"><path d="M104,152a8,8,0,0,1-8,8H56a8,8,0,0,1,0-16H96A8,8,0,0,1,104,152Zm136-36v60a16,16,0,0,1-16,16H136v32a8,8,0,0,1-16,0V192H32a16,16,0,0,1-16-16V116A60.07,60.07,0,0,1,76,56h76V24a8,8,0,0,1,8-8h32a8,8,0,0,1,0,16H168V56h12A60.07,60.07,0,0,1,240,116ZM120,176V116a44,44,0,0,0-88,0v60Zm104-60a44.05,44.05,0,0,0-44-44H168v72a8,8,0,0,1-16,0V72H116.75A59.86,59.86,0,0,1,136,116v60h88Z"></path></svg>'
         }
+
       ],
-      error: null
+      localError: null
     };
   },
   computed: {
     ...mapGetters('auth', [
-      'user',
       'isAuthenticated'
     ]),
+    ...mapState('auth', ['user']),
+    ...mapState('admin', [
+      'categories',
+      'products',
+      'users',
+      'error',
+      'loading',
+      'contacts'
+    ]),
+
+    filteredContacts() {
+      if (!this.contactSearch) return this.contacts;
+
+      const search = this.contactSearch.toLowerCase();
+      return this.contacts.filter(contact =>
+          contact.fullname.toLowerCase().includes(search) ||
+          contact.email.toLowerCase().includes(search) ||
+          contact.subject.toLowerCase().includes(search) ||
+          contact.message.toLowerCase().includes(search)
+      );
+    },
 
     isAdmin() {
-      return this.isAuthenticated && this.user && this.user.role === 'admin';
+      if (!this.user) return false;
+      const role = this.user.role || (this.user.user && this.user.user.role);
+      return this.isAuthenticated && role === 'admin';
     },
 
     currentUserId() {
@@ -611,7 +891,7 @@ export default {
       if (this.productSearch) {
         const search = this.productSearch.toLowerCase();
         result = result.filter(product =>
-            product.title.toLowerCase().includes(search) ||
+            product.name.toLowerCase().includes(search) ||  // Modifié: title -> name pour correspondre au backend
             (product.description && product.description.toLowerCase().includes(search))
         );
       }
@@ -657,7 +937,7 @@ export default {
       if (this.productSearch) {
         const search = this.productSearch.toLowerCase();
         filteredCount = this.products.filter(product =>
-            product.title.toLowerCase().includes(search) ||
+            product.name.toLowerCase().includes(search) ||  // Modifié: title -> name
             (product.description && product.description.toLowerCase().includes(search))
         ).length;
       }
@@ -682,6 +962,10 @@ export default {
 
     formatDate(dateString) {
       const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Date invalide';
+      }
+
       return new Intl.DateTimeFormat('fr-FR', {
         year: 'numeric',
         month: '2-digit',
@@ -703,12 +987,42 @@ export default {
     },
 
     setError(error) {
-      const msg = error.response?.data?.message || 'Une erreur est survenue';
-      this.error = msg;
+      this.localError = error;
     },
 
     clearError() {
-      this.error = null;
+      this.localError = null;
+    },
+
+    handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      // Vérification de la taille du fichier (2MB max)
+      const maxSize = 2 * 1024 * 1024; // 2MB
+      if (file.size > maxSize) {
+        this.setError('L\'image est trop volumineuse. La taille maximale est de 2MB.');
+        event.target.value = null; // Réinitialise l'input file
+        return;
+      }
+
+      // Vérification du type de fichier
+      if (!file.type.match('image.*')) {
+        this.setError('Le fichier sélectionné n\'est pas une image.');
+        event.target.value = null;
+        return;
+      }
+
+      // Lecture et conversion en base64
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.productForm.images = e.target.result;
+      };
+      reader.onerror = (e) => {
+        this.setError('Erreur lors de la lecture du fichier.');
+        console.error('Erreur de lecture du fichier:', e);
+      };
+      reader.readAsDataURL(file);
     },
 
     async refreshData() {
@@ -717,101 +1031,14 @@ export default {
 
       try {
         await Promise.all([
-          this.fetchCategories(),
-          this.fetchProducts(),
-          this.fetchUsers()
+          this.$store.dispatch('admin/fetchCategories'),
+          this.$store.dispatch('admin/fetchProducts'),
+          this.$store.dispatch('admin/fetchUsers'),
+          this.$store.dispatch('admin/fetchContacts'),
         ]);
       } catch (error) {
         console.error('Erreur lors du chargement des données:', error);
         this.setError('Erreur lors du chargement des données. Veuillez réessayer.');
-      } finally {
-        this.isLoading = false;
-      }
-    },
-
-    // Méthodes d'API avec structure similaire au module auth
-    async fetchCategories() {
-      this.isLoading = true;
-      this.clearError();
-
-      try {
-        const res = await axios.get(`${this.$store.state.apiUrl}/category/getAll`, {
-          withCredentials: true
-        });
-
-        if (res.data) {
-          this.categories = res.data;
-
-          // Compter les produits par catégorie si les produits sont déjà chargés
-          if (this.products.length > 0) {
-            this.categories.forEach(category => {
-              category.productCount = this.products.filter(
-                  product => product.category === category._id
-              ).length;
-            });
-          }
-          return true;
-        }
-        throw new Error('Réponse inattendue');
-      } catch (error) {
-        console.error('Erreur lors de la récupération des catégories:', error);
-        this.setError(error.response?.data?.message || 'Erreur lors de la récupération des catégories');
-        return false;
-      } finally {
-        this.isLoading = false;
-      }
-    },
-
-    async fetchProducts() {
-      this.isLoading = true;
-      this.clearError();
-
-      try {
-        const res = await axios.get(`${this.$store.state.apiUrl}/product/getAll`, {
-          withCredentials: true
-        });
-
-        if (res.data) {
-          this.products = res.data;
-
-          // Mettre à jour les compteurs de produits pour les catégories
-          if (this.categories.length > 0) {
-            this.categories.forEach(category => {
-              category.productCount = this.products.filter(
-                  product => product.category === category._id
-              ).length;
-            });
-          }
-          return true;
-        }
-        throw new Error('Réponse inattendue');
-      } catch (error) {
-        console.error('Erreur lors de la récupération des produits:', error);
-        this.setError(error.response?.data?.message || 'Erreur lors de la récupération des produits');
-        return false;
-      } finally {
-        this.isLoading = false;
-      }
-    },
-
-    async fetchUsers() {
-      this.isLoading = true;
-      this.clearError();
-
-      try {
-        const res = await axios.get(`${this.$store.state.apiUrl}/users`, {
-          withCredentials: true
-        });
-
-        if (res.data) {
-          this.users = res.data;
-          return true;
-        }
-        throw new Error('Réponse inattendue');
-      } catch (error) {
-        console.error('Erreur lors de la récupération des utilisateurs:', error);
-        this.setError(error.response?.data?.message || 'Erreur lors de la récupération des utilisateurs');
-        return false;
       } finally {
         this.isLoading = false;
       }
@@ -843,27 +1070,21 @@ export default {
       this.clearError();
 
       try {
-        let res;
+        let result;
         if (this.editingCategoryId) {
           // Mettre à jour une catégorie existante
-          res = await axios.put(
-              `${this.$store.state.apiUrl}/categories/${this.editingCategoryId}`,
-              this.categoryForm,
-              { withCredentials: true }
-          );
+          result = await this.$store.dispatch('admin/updateCategory', {
+            id: this.editingCategoryId,
+            data: this.categoryForm
+          });
         } else {
           // Créer une nouvelle catégorie
-          res = await axios.post(
-              `${this.$store.state.apiUrl}/categories`,
-              this.categoryForm,
-              { withCredentials: true }
-          );
+          result = await this.$store.dispatch('admin/createCategory', this.categoryForm);
         }
 
-        // Vérifier la réponse
-        if (res.data?.success || res.status === 201 || res.status === 200) {
+        if (result.success) {
           // Recharger les catégories
-          await this.fetchCategories();
+          await this.$store.dispatch('admin/fetchCategories');
 
           // Fermer la modale
           this.showCategoryModal = false;
@@ -877,13 +1098,13 @@ export default {
           });
 
           return { success: true };
+        } else {
+          throw new Error(result.message || 'Une erreur est survenue');
         }
-
-        throw new Error('Format de réponse non reconnu');
       } catch (error) {
         console.error('Erreur lors de la sauvegarde de la catégorie:', error);
-        this.setError(error.response?.data?.message || 'Erreur lors de la sauvegarde de la catégorie');
-        return { success: false, message: this.error };
+        this.setError(error.message || 'Erreur lors de la sauvegarde de la catégorie');
+        return { success: false, message: this.localError };
       } finally {
         this.isLoading = false;
       }
@@ -895,7 +1116,7 @@ export default {
 
       if (productsInCategory.length > 0) {
         this.setError(`Impossible de supprimer cette catégorie : ${productsInCategory.length} produit(s) y sont associés.`);
-        return { success: false, message: this.error };
+        return { success: false, message: this.localError };
       }
 
       if (!confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) {
@@ -906,14 +1127,11 @@ export default {
       this.clearError();
 
       try {
-        const res = await axios.delete(
-            `${this.$store.state.apiUrl}/categories/${categoryId}`,
-            { withCredentials: true }
-        );
+        const result = await this.$store.dispatch('admin/deleteCategory', categoryId);
 
-        if (res.data?.success || res.status === 200 || res.status === 204) {
+        if (result.success) {
           // Recharger les catégories
-          await this.fetchCategories();
+          await this.$store.dispatch('admin/fetchCategories');
 
           // Message de succès
           this.$emit('showMessage', {
@@ -922,13 +1140,13 @@ export default {
           });
 
           return { success: true };
+        } else {
+          throw new Error(result.message || 'Une erreur est survenue');
         }
-
-        throw new Error('Format de réponse non reconnu');
       } catch (error) {
         console.error('Erreur lors de la suppression de la catégorie:', error);
-        this.setError(error.response?.data?.message || 'Erreur lors de la suppression de la catégorie');
-        return { success: false, message: this.error };
+        this.setError(error.message || 'Erreur lors de la suppression de la catégorie');
+        return { success: false, message: this.localError };
       } finally {
         this.isLoading = false;
       }
@@ -937,19 +1155,33 @@ export default {
     // Gestion des produits
     openProductModal(product = null) {
       this.clearError();
+      this.imageInputType = 'url'; // Réinitialiser à URL par défaut
 
       if (product) {
         this.editingProductId = product._id;
-        this.productForm = { ...product };
+        // Adapter les champs du modèle en fonction du backend
+        this.productForm = {
+          name: product.name || product.title,
+          description: product.description,
+          price: product.price,
+          stock: product.stock,
+          category: product.category,
+          images: product.images || product.image
+        };
+
+        // Déterminer si l'image est une URL ou un base64
+        if (this.productForm.images && this.productForm.images.startsWith('data:')) {
+          this.imageInputType = 'upload';
+        }
       } else {
         this.editingProductId = null;
         this.productForm = {
-          title: '',
+          name: '',
           description: '',
           price: 0,
           stock: 0,
           category: this.categories.length ? this.categories[0]._id : '',
-          image: ''
+          images: ''
         };
       }
 
@@ -961,27 +1193,21 @@ export default {
       this.clearError();
 
       try {
-        let res;
+        let result;
         if (this.editingProductId) {
           // Mettre à jour un produit existant
-          res = await axios.put(
-              `${this.$store.state.apiUrl}/products/${this.editingProductId}`,
-              this.productForm,
-              { withCredentials: true }
-          );
+          result = await this.$store.dispatch('admin/updateProduct', {
+            id: this.editingProductId,
+            data: this.productForm
+          });
         } else {
           // Créer un nouveau produit
-          res = await axios.post(
-              `${this.$store.state.apiUrl}/products`,
-              this.productForm,
-              { withCredentials: true }
-          );
+          result = await this.$store.dispatch('admin/createProduct', this.productForm);
         }
 
-        // Vérifier la réponse
-        if (res.data?.success || res.status === 201 || res.status === 200) {
+        if (result.success) {
           // Recharger les produits
-          await this.fetchProducts();
+          await this.$store.dispatch('admin/fetchProducts');
 
           // Fermer la modale
           this.showProductModal = false;
@@ -995,13 +1221,13 @@ export default {
           });
 
           return { success: true };
+        } else {
+          throw new Error(result.message || 'Une erreur est survenue');
         }
-
-        throw new Error('Format de réponse non reconnu');
       } catch (error) {
         console.error('Erreur lors de la sauvegarde du produit:', error);
-        this.setError(error.response?.data?.message || 'Erreur lors de la sauvegarde du produit');
-        return { success: false, message: this.error };
+        this.setError(error.message || 'Erreur lors de la sauvegarde du produit');
+        return { success: false, message: this.localError };
       } finally {
         this.isLoading = false;
       }
@@ -1016,14 +1242,11 @@ export default {
       this.clearError();
 
       try {
-        const res = await axios.delete(
-            `${this.$store.state.apiUrl}/products/${productId}`,
-            { withCredentials: true }
-        );
+        const result = await this.$store.dispatch('admin/deleteProduct', productId);
 
-        if (res.data?.success || res.status === 200 || res.status === 204) {
+        if (result.success) {
           // Recharger les produits
-          await this.fetchProducts();
+          await this.$store.dispatch('admin/fetchProducts');
 
           // Message de succès
           this.$emit('showMessage', {
@@ -1032,13 +1255,13 @@ export default {
           });
 
           return { success: true };
+        } else {
+          throw new Error(result.message || 'Une erreur est survenue');
         }
-
-        throw new Error('Format de réponse non reconnu');
       } catch (error) {
         console.error('Erreur lors de la suppression du produit:', error);
-        this.setError(error.response?.data?.message || 'Erreur lors de la suppression du produit');
-        return { success: false, message: this.error };
+        this.setError(error.message || 'Erreur lors de la suppression du produit');
+        return { success: false, message: this.localError };
       } finally {
         this.isLoading = false;
       }
@@ -1052,7 +1275,22 @@ export default {
     // Gestion des utilisateurs
     openUserModal(user) {
       this.clearError();
-      this.userForm = { ...user };
+      this.userTabActive = 'info'; // Réinitialiser à l'onglet d'information
+
+      // Copier les données de l'utilisateur avec adresse de facturation
+      this.userForm = {
+        ...user,
+        // Assurer que l'adresse de facturation existe avec une structure appropriée
+        invoiceAddress: user.invoiceAddress || {
+          line1: '',
+          line2: '',
+          postalCode: '',
+          city: '',
+          stateOrDepartment: '',
+          country: ''
+        }
+      };
+
       this.showUserModal = true;
     },
 
@@ -1066,23 +1304,22 @@ export default {
           this.userForm.role = this.user.role;
         }
 
-        const updateData = {
-          user: this.userForm._id,
-          edit: {
-            firstname: this.userForm.firstname,
-            lastname: this.userForm.lastname,
-            email: this.userForm.email,
-            role: this.userForm.role
-          }
+        const userData = {
+          firstname: this.userForm.firstname,
+          lastname: this.userForm.lastname,
+          email: this.userForm.email,
+          role: this.userForm.role,
+          invoiceAddress: this.userForm.invoiceAddress
         };
 
-        const res = await axios.post(`${this.$store.state.apiUrl}/users/edit`, updateData, {
-          withCredentials: true
+        const result = await this.$store.dispatch('admin/updateUser', {
+          userId: this.userForm._id,
+          userData
         });
 
-        if (res.data?.code === 'USER_UPDATED' || res.status === 200) {
+        if (result.success) {
           // Recharger les utilisateurs
-          await this.fetchUsers();
+          await this.$store.dispatch('admin/fetchUsers');
 
           // Fermer la modale
           this.showUserModal = false;
@@ -1094,23 +1331,23 @@ export default {
           });
 
           return { success: true };
+        } else {
+          throw new Error(result.message || 'Une erreur est survenue');
         }
-
-        throw new Error('Format de réponse non reconnu');
       } catch (error) {
         console.error('Erreur lors de la sauvegarde de l\'utilisateur:', error);
-        this.setError(error.response?.data?.message || 'Erreur lors de la sauvegarde de l\'utilisateur');
-        return { success: false, message: this.error };
+        this.setError(error.message || 'Erreur lors de la sauvegarde de l\'utilisateur');
+        return { success: false, message: this.localError };
       } finally {
         this.isLoading = false;
       }
     },
 
     async deleteUser(userId) {
-      // Ne pas permettre de supprimer l'utilisateur courant
+      // Vérifier que l'utilisateur ne tente pas de supprimer son propre compte
       if (userId === this.currentUserId) {
         this.setError('Vous ne pouvez pas supprimer votre propre compte');
-        return { success: false, message: this.error };
+        return { success: false, message: this.localError };
       }
 
       if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
@@ -1121,14 +1358,11 @@ export default {
       this.clearError();
 
       try {
-        const res = await axios.delete(
-            `${this.$store.state.apiUrl}/users/${userId}`,
-            { withCredentials: true }
-        );
+        const result = await this.$store.dispatch('admin/deleteUser', userId);
 
-        if (res.data?.success || res.status === 200 || res.status === 204) {
+        if (result.success) {
           // Recharger les utilisateurs
-          await this.fetchUsers();
+          await this.$store.dispatch('admin/fetchUsers');
 
           // Message de succès
           this.$emit('showMessage', {
@@ -1137,48 +1371,89 @@ export default {
           });
 
           return { success: true };
+        } else {
+          throw new Error(result.message || 'Une erreur est survenue');
         }
-
-        throw new Error('Format de réponse non reconnu');
       } catch (error) {
         console.error('Erreur lors de la suppression de l\'utilisateur:', error);
-        this.setError(error.response?.data?.message || 'Erreur lors de la suppression de l\'utilisateur');
-        return { success: false, message: this.error };
+        this.setError(error.message || 'Erreur lors de la suppression de l\'utilisateur');
+        return { success: false, message: this.localError };
       } finally {
         this.isLoading = false;
       }
     },
 
-    async resetUserPassword(userId) {
-      if (!confirm('Êtes-vous sûr de vouloir réinitialiser le mot de passe de cet utilisateur ?')) {
-        return { success: false, canceled: true };
+    resetUserPassword(userId) {
+      this.clearError();
+      this.passwordForm = {
+        userId: userId,
+        newPassword: '',
+        confirmPassword: '',
+        currentPassword: '' // Pour les admin, pas nécessaire de fournir l'ancien mot de passe
+      };
+      this.showPasswordResetModal = true;
+    },
+
+    async saveNewPassword() {
+      if (this.passwordForm.newPassword !== this.passwordForm.confirmPassword) {
+        this.setError('Les mots de passe ne correspondent pas');
+        return;
       }
 
       this.isLoading = true;
       this.clearError();
 
       try {
-        const res = await axios.post(
-            `${this.$store.state.apiUrl}/users/reset-password`,
-            { userId },
-            { withCredentials: true }
-        );
+        const result = await this.$store.dispatch('admin/resetUserPassword', {
+          userId: this.passwordForm.userId,
+          newPassword: this.passwordForm.newPassword,
+          currentPassword: this.passwordForm.currentPassword
+        });
 
-        if (res.data?.success || res.status === 200) {
+        if (result.success) {
+          // Fermer la modale
+          this.showPasswordResetModal = false;
+
           // Message de succès
           this.$emit('showMessage', {
             type: 'success',
-            text: 'Mot de passe réinitialisé avec succès. Un email a été envoyé à l\'utilisateur.'
+            text: 'Mot de passe réinitialisé avec succès'
           });
 
           return { success: true };
+        } else {
+          throw new Error(result.message || 'Une erreur est survenue');
         }
-
-        throw new Error('Format de réponse non reconnu');
       } catch (error) {
         console.error('Erreur lors de la réinitialisation du mot de passe:', error);
-        this.setError(error.response?.data?.message || 'Erreur lors de la réinitialisation du mot de passe');
-        return { success: false, message: this.error };
+        this.setError(error.message || 'Erreur lors de la réinitialisation du mot de passe');
+        return { success: false, message: this.localError };
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async deleteContact(id) {
+      if (!confirm('Êtes-vous sûr de vouloir supprimer ce message ?')) return;
+
+      this.isLoading = true;
+      this.clearError();
+
+      try {
+        const result = await this.$store.dispatch('admin/deleteContact', id);
+
+        if (result.success) {
+          await this.$store.dispatch('admin/fetchContacts');
+          this.$emit('showMessage', {
+            type: 'success',
+            text: 'Message supprimé avec succès'
+          });
+        } else {
+          throw new Error(result.message);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la suppression du message :', error);
+        this.setError(error.message || 'Impossible de supprimer ce message.');
       } finally {
         this.isLoading = false;
       }
@@ -1216,6 +1491,22 @@ export default {
   padding: 1rem;
   position: relative;
   min-height: 600px;
+}
+
+/* Message d'erreur */
+.error-alert {
+  background-color: #ffebee;
+  color: #d32f2f;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.error-alert svg {
+  fill: #d32f2f;
 }
 
 /* Écran de chargement */
@@ -1740,12 +2031,73 @@ td {
   text-align: center;
 }
 
+/* Pour les onglets utilisateur */
+.user-tabs {
+  display: flex;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.user-modal {
+  max-width: 700px;
+}
+
+.optional {
+  font-size: 0.8rem;
+  color: #999;
+  font-weight: normal;
+}
+
+.error-text {
+  color: #d32f2f;
+  font-size: 0.8rem;
+  margin-top: 0.3rem;
+}
+
 .image-preview img {
   max-width: 100%;
   max-height: 200px;
   border-radius: 4px;
   border: 1px solid #eee;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Styles pour l'image upload */
+.image-input-container {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.image-input-tabs {
+  display: flex;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.tab-btn {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.2s ease;
+}
+
+.tab-btn.active {
+  color: var(--primary-color, #2e7d32);
+  border-bottom-color: var(--primary-color, #2e7d32);
+}
+
+.url-input, .file-input {
+  margin-bottom: 1rem;
+}
+
+.file-input input[type="file"] {
+  padding: 0.5rem 0;
 }
 
 /* Responsive */
