@@ -1,5 +1,7 @@
 # TechNatura - Site E-commerce de Technologie Responsable
 
+Ecole Efrei
+
 TechNatura est une plateforme e-commerce spécialisée dans la vente de produits technologiques reconditionnés et éco-responsables. Ce projet utilise Vue.js pour offrir une expérience utilisateur fluide et moderne.
 
 ## 🌱 À propos du projet
