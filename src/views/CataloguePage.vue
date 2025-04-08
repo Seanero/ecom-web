@@ -201,7 +201,7 @@
         </router-link>
 
         <div class="product-info">
-          <router-link :to="`/product/${product._id}`" class="product-title-link">
+          <router-link :to="`/produit/${product._id}`" class="product-title-link">
             <h3 class="product-title">{{ product.name }}</h3>
           </router-link>
 
@@ -218,7 +218,7 @@
         <button
             class="add-to-cart-button"
             :disabled="product.stock <= 0"
-            @click="addToCart(product)"
+            @click="addToCarts(product)"
         >
           Ajouter au panier
         </button>
@@ -248,6 +248,7 @@
 
 <script>
 import axios from 'axios';
+import {mapActions} from "vuex";
 
 export default {
   name: 'CataloguePage',
@@ -287,6 +288,9 @@ export default {
     }
   },
   methods: {
+    ...mapActions({
+      addToCart: 'cart/addToCart'
+    }),
     getCategoryName(categoryId) {
       return this.categoryMap[categoryId] || 'Catégorie';
     },
@@ -419,9 +423,11 @@ export default {
       }
     },
 
-    addToCart(product) {
+    addToCarts(product) {
       // Cette fonction serait implémentée pour gérer l'ajout au panier
       console.log(`Produit ajouté au panier: ${product.name}`);
+
+      this.addToCart(product)
 
       // Vous pourriez émettre un événement ou appeler une action de votre store
       // this.$store.dispatch('cart/addItem', product);

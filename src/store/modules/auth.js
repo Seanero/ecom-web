@@ -1,4 +1,3 @@
-// src/store/modules/auth.js
 import axios from 'axios';
 
 const state = {
@@ -9,140 +8,83 @@ const state = {
 };
 
 const getters = {
-    // Vérifier si l'utilisateur est authentifié
     isAuthenticated: state => state.isAuthenticated,
-
-    // Obtenir les informations de l'utilisateur
-    user: state => state.user,
-
-    // Obtenir l'erreur d'authentification
+    user: state => state.user.user, // corrigé ici
     authError: state => state.error,
-
-    // Obtenir l'état de chargement
     isLoading: state => state.loading
 };
 
 const mutations = {
-    // Définir l'utilisateur connecté
     SET_USER(state, user) {
         state.user = user;
         state.isAuthenticated = true;
     },
-
-    // Effacer les informations utilisateur lors de la déconnexion
     CLEAR_USER(state) {
         state.user = null;
         state.isAuthenticated = false;
     },
-
-    // Définir l'erreur d'authentification
     SET_ERROR(state, error) {
         state.error = error;
     },
-
-    // Effacer l'erreur d'authentification
     CLEAR_ERROR(state) {
         state.error = null;
     },
-
-    // Définir l'état de chargement
     SET_LOADING(state, loading) {
         state.loading = loading;
     }
 };
 
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 const actions = {
-    // Action de connexion
-    // Modifications à apporter au fichier src/store/modules/auth.js
-
-// Modifiez l'action de connexion pour vérifier correctement le statut du cookie
     async login({ commit, dispatch }, credentials) {
-        try {
-            commit('SET_LOADING', true);
-            commit('CLEAR_ERROR');
+        commit('SET_LOADING', true);
+        commit('CLEAR_ERROR');
 
-            // Étape 1: Connexion pour obtenir le token en cookie
-            const loginResponse = await axios.post(`${this.state.apiUrl}/users/login`, credentials, {
-                withCredentials: false // Crucial pour traiter les cookies
+        try {
+            const res = await axios.post(`${this.state.apiUrl}/users/login`, credentials, {
+                withCredentials: true
             });
 
-            // Vérifier si la connexion a réussi
-            if (loginResponse.data && loginResponse.data.code === "LOGIN-SUCCESS") {
-                // Le cookie token est automatiquement géré par le navigateur
-                console.log("Connexion réussie, récupération du profil utilisateur...");
+            if (res.data?.code === "LOGIN-SUCCESS") {
+                await wait(200);
+                const success = await dispatch('fetchUserInfo');
 
-                // Étape 2: Récupérer les informations utilisateur complètes après un court délai
-                // Ce délai permet de s'assurer que le cookie est bien enregistré côté client
-                await new Promise(resolve => setTimeout(resolve, 200));
-
-                const userInfoSuccess = await dispatch('fetchUserInfo');
-
-                if (!userInfoSuccess) {
-                    console.error("Échec de récupération des informations utilisateur après connexion réussie");
-                    commit('SET_ERROR', 'Problème lors de la récupération de votre profil');
-                    return { success: false, message: 'Problème de récupération du profil' };
-                }
-
-                // Optionnel: stocker email dans localStorage si "se souvenir de moi"
                 if (credentials.rememberMe) {
                     localStorage.setItem('remembered_email', credentials.email);
                 }
 
+                if (!success) throw new Error('fetchUserInfo failed');
                 return { success: true };
-            } else {
-                throw new Error('Réponse inattendue du serveur');
             }
+
+            throw new Error('Réponse inattendue');
         } catch (error) {
-            let errorMessage = 'Erreur de connexion';
-
-            if (error.response) {
-                // Gestion des erreurs API
-                const { status, data } = error.response;
-                console.error("Erreur de connexion:", status, data);
-
-                if (status === 404 && data.code === "LOGIN_INCORRECT") {
-                    errorMessage = 'Email ou mot de passe incorrect';
-                }
+            let msg = 'Erreur de connexion';
+            if (error.response?.status === 404 && error.response?.data?.code === "LOGIN_INCORRECT") {
+                msg = 'Email ou mot de passe incorrect';
             }
-
-            commit('SET_ERROR', errorMessage);
-            return { success: false, message: errorMessage };
+            commit('SET_ERROR', msg);
+            return { success: false, message: msg };
         } finally {
             commit('SET_LOADING', false);
         }
     },
 
-// Modifiez fetchUserInfo pour diagnostiquer les problèmes
     async fetchUserInfo({ commit }) {
+        commit('SET_LOADING', true);
         try {
-            commit('SET_LOADING', true);
-
-            console.log("Tentative de récupération des informations utilisateur...");
-
-            // Vérifier si des cookies sont disponibles
-            console.log("Cookies disponibles:", document.cookie);
-
-            const response = await axios.get(`${this.state.apiUrl}/users/me`, {
-                withCredentials: true  // Crucial pour envoyer les cookies
+            const res = await axios.get(`${this.state.apiUrl}/users/me`, {
+                withCredentials: true
             });
 
-            console.log("Réponse fetchUserInfo:", response.data);
-
-            if (response.data) {
-                // Stocker les informations utilisateur complètes
-                commit('SET_USER', response.data);
+            if (res.data) {
+                commit('SET_USER', res.data);
                 return true;
-            } else {
-                throw new Error('Impossible de récupérer les informations utilisateur');
             }
+
+            throw new Error();
         } catch (error) {
-            console.error('Erreur lors de la récupération des informations utilisateur:', error);
-
-            if (error.response) {
-                console.error("Status:", error.response.status);
-                console.error("Data:", error.response.data);
-            }
-
             commit('CLEAR_USER');
             return false;
         } finally {
@@ -150,104 +92,162 @@ const actions = {
         }
     },
 
-    // Action de déconnexion
     async logout({ commit }) {
         try {
-            // Appel à l'API de déconnexion qui supprime le cookie
-            await axios.get(`${this.state.apiUrl}/users/logout`);
-
-            // Nettoyer le state
+            await axios.get(`${this.state.apiUrl}/users/logout`, {
+                withCredentials: true
+            });
             commit('CLEAR_USER');
-
             return { success: true };
-        } catch (error) {
-            console.error('Erreur lors de la déconnexion:', error);
+        } catch {
             return { success: false, message: 'Erreur lors de la déconnexion' };
         }
     },
 
-    // Vérifier si l'utilisateur est déjà connecté (au chargement de l'app)
-    async checkAuth({ commit, dispatch }) {
-        try {
-            commit('SET_LOADING', true);
-
-            // Essayer de récupérer les informations utilisateur
-            // Si le cookie est valide, cela fonctionnera, sinon cela échouera
-            const success = await dispatch('fetchUserInfo');
-
-            return success;
-        } catch (error) {
-            console.error('Erreur lors de la vérification de l\'authentification:', error);
-            commit('CLEAR_USER');
-            return false;
-        } finally {
-            commit('SET_LOADING', false);
-        }
+    async checkAuth({ dispatch }) {
+        return await dispatch('fetchUserInfo');
     },
 
-    // Enregistrer un nouvel utilisateur
     async register({ commit, dispatch }, userData) {
+        commit('SET_LOADING', true);
+        commit('CLEAR_ERROR');
+
         try {
-            commit('SET_LOADING', true);
-            commit('CLEAR_ERROR');
+            const res = await axios.post(`${this.state.apiUrl}/users/register`, userData);
 
-            const response = await axios.post(`${this.state.apiUrl}/users/register`, userData);
+            // Vérification plus permissive pour détecter le succès
+            if (res.data?.success || // Vérifie success
+                res.data?.code === "USER_CREATED" || // Vérifie code
+                res.data?.response === "User created" || // Vérifie response
+                res.status === 201) { // Vérifie le statut HTTP
 
-            if (response.data && response.data.success) {
-                // Si l'inscription inclut une connexion automatique
-                if (response.data.autoLogin) {
+                if (res.data?.autoLogin) {
                     await dispatch('fetchUserInfo');
                 }
-
                 return { success: true };
-            } else {
-                throw new Error('Erreur lors de l\'inscription');
             }
+
+            // Ajouter un log pour voir la réponse
+            console.log("Réponse de création d'utilisateur:", res.data);
+
+            // Au lieu de throw, renvoyez un statut d'échec avec un message plus informatif
+            return { success: false, message: 'Format de réponse non reconnu' };
         } catch (error) {
-            let errorMessage = 'Erreur lors de l\'inscription';
+            console.error("Erreur complète:", error);
 
-            if (error.response) {
-                // Gestion des erreurs API
-                const { status, data } = error.response;
+            const message = error.response?.status === 409 && error.response?.data?.message?.includes('email')
+                ? 'Cet email est déjà utilisé'
+                : 'Erreur lors de l\'inscription';
 
-                if (status === 409 && data.message && data.message.includes('email')) {
-                    errorMessage = 'Cet email est déjà utilisé';
-                }
-            }
-
-            commit('SET_ERROR', errorMessage);
-            return { success: false, message: errorMessage };
+            commit('SET_ERROR', message);
+            return { success: false, message };
         } finally {
             commit('SET_LOADING', false);
         }
     },
 
-    // Mettre à jour les informations utilisateur
-    async updateProfile({ commit }, userData) {
+    async updateProfile({ commit, state, dispatch }, profileData) {
+        commit('SET_LOADING', true);
+        commit('CLEAR_ERROR');
+
         try {
-            commit('SET_LOADING', true);
-            commit('CLEAR_ERROR');
+            const updateData = {
+                user: state.user._id,
+                edit: {
+                    firstname: profileData.firstname,
+                    lastname: profileData.lastname,
+                    email: profileData.email
+                }
+            };
 
-            const response = await axios.put(`${this.state.apiUrl}/users/profile`, userData);
+            const res = await axios.post(`${this.state.apiUrl}/users/edit`, updateData, {
+                withCredentials: true
+            });
 
-            if (response.data) {
-                // Mettre à jour les infos utilisateur dans le state
-                commit('SET_USER', response.data);
-                return { success: true };
-            } else {
-                throw new Error('Erreur lors de la mise à jour du profil');
+            if (res.data?.code === 'USER_UPDATED') {
+                const updated = await dispatch('fetchUserInfo');
+                if (!updated) throw new Error();
+                return { success: true, message: 'Informations mises à jour avec succès' };
             }
+
+            throw new Error();
         } catch (error) {
-            let errorMessage = 'Erreur lors de la mise à jour du profil';
+            const msg = error.response?.data?.message || 'Erreur lors de la mise à jour du profil';
+            commit('SET_ERROR', msg);
+            return { success: false, message: msg };
+        } finally {
+            commit('SET_LOADING', false);
+        }
+    },
 
-            if (error.response) {
-                // Gestion des erreurs API
-                const { status, data } = error.response;
-                errorMessage = data.message || errorMessage;
+    async updateAddress({ commit, state, dispatch }, addressData) {
+        commit('SET_LOADING', true);
+        commit('CLEAR_ERROR');
+
+        try {
+            const updateData = {
+                user: state.user.user._id,
+                edit: {
+                    invoiceAddress: {
+                        line1: addressData.line1,
+                        line2: addressData.line2,
+                        postalCode: addressData.postalCode,
+                        city: addressData.city,
+                        stateOrDepartment: addressData.stateOrDepartment,
+                        country: addressData.country
+                    }
+                }
+            };
+
+            console.log(updateData);
+
+            const res = await axios.post(`${this.state.apiUrl}/users/edit`, updateData, {
+                withCredentials: true
+            });
+
+            if (res.data?.code === 'USER_UPDATED') {
+                await dispatch('fetchUserInfo');
+                return { success: true, message: 'Adresse mise à jour avec succès' };
             }
 
-            commit('SET_ERROR', errorMessage);
-            return { success: false, message: errorMessage };
+            throw new Error();
+        } catch (error) {
+            const msg = error.response?.data?.message || 'Erreur lors de la mise à jour de l\'adresse';
+            commit('SET_ERROR', msg);
+            return { success: false, message: msg };
+        } finally {
+            commit('SET_LOADING', false);
+        }
+    },
+
+    async changePassword({ commit, state }, passwordData) {
+        commit('SET_LOADING', true);
+        commit('CLEAR_ERROR');
+
+        try {
+            const updateData = {
+                userId: state.user.user._id,
+                currentPassword: passwordData.currentPassword,
+                newPassword: passwordData.newPassword
+            };
+
+            const res = await axios.post(`${this.state.apiUrl}/users/changePassword`, updateData, {
+                withCredentials: true
+            });
+
+            if (res.data?.code === 'PASSWORD_UPDATED' || res.data?.code === 'USER_UPDATED') {
+                return { success: true, message: 'Mot de passe modifié avec succès' };
+            }
+
+            throw new Error();
+        } catch (error) {
+            const code = error.response?.data?.code;
+            const msg = code === 'INCORRECT_PASSWORD'
+                ? 'Le mot de passe actuel est incorrect'
+                : error.response?.data?.message || 'Erreur lors du changement de mot de passe';
+
+            commit('SET_ERROR', msg);
+            return { success: false, message: msg };
         } finally {
             commit('SET_LOADING', false);
         }

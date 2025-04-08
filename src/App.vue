@@ -5,6 +5,13 @@ import Footer from "./components/Footer.vue";
 export default {
   name: "App",
   components: {Header, Footer},
+  async created(){
+    try {
+      await this.$store.dispatch("auth/checkAuth");
+    } catch (e) {
+      console.error('Erreur lors du checkAuth :', err);
+    }
+  }
 }
 
 </script>

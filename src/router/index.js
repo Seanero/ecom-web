@@ -9,6 +9,9 @@ import CataloguePage from "../views/CataloguePage.vue";
 import ContactPage from "../views/ContactPage.vue";
 import ConnexionPage from "../views/ConnexionPage.vue";
 import LegalPage from "../views/LegalPage.vue";
+import AccountPage from "../views/AccountPage.vue";
+import CartPage from "../views/CartPage.vue";
+import AdminPage from "../views/AdminPage.vue";
 
 
 const routes = [
@@ -31,6 +34,18 @@ const routes = [
     {
         path: '/inscription',
         component: RegisterPage
+    },
+    {
+        path: '/compte',
+        component: AccountPage
+    },
+    {
+        path: '/panier',
+        component: CartPage
+    },
+    {
+        path: '/admin',
+        component: AdminPage
     },
     {
         path: '/legals',

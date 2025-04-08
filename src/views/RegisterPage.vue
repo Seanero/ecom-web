@@ -10,6 +10,16 @@
         <p class="subtitle">Rejoignez-nous pour une expérience tech plus responsable</p>
       </div>
 
+      <!-- Message d'erreur global -->
+      <div v-if="authError" class="global-error">
+        <svg xmlns="http://www.w3.org/2000/svg" class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <span>{{ authError }}</span>
+      </div>
+
       <form class="register-form" @submit.prevent="submitForm">
         <!-- Informations personnelles -->
         <div class="form-section">
@@ -112,6 +122,18 @@
             <p class="error-message" v-if="formErrors.invoiceAddress?.line1">{{ formErrors.invoiceAddress.line1 }}</p>
           </div>
 
+          <div class="form-group">
+            <label for="line2">Complément d'adresse</label>
+            <input
+                type="text"
+                id="line2"
+                v-model="formData.invoiceAddress.line2"
+                placeholder="Appartement, bâtiment, étage, etc."
+                :class="{ 'error': formErrors.invoiceAddress?.line2 }"
+            >
+            <p class="error-message" v-if="formErrors.invoiceAddress?.line2">{{ formErrors.invoiceAddress.line2 }}</p>
+          </div>
+
           <div class="form-row">
             <div class="form-group">
               <label for="postalCode">Code postal*</label>
@@ -140,23 +162,38 @@
             </div>
           </div>
 
-          <div class="form-group">
-            <label for="country">Pays*</label>
-            <select
-                id="country"
-                v-model="formData.invoiceAddress.country"
-                required
-                :class="{ 'error': formErrors.invoiceAddress?.country }"
-            >
-              <option value="" disabled selected>Sélectionnez un pays</option>
-              <option value="France">France</option>
-              <option value="Belgique">Belgique</option>
-              <option value="Suisse">Suisse</option>
-              <option value="Luxembourg">Luxembourg</option>
-              <option value="Canada">Canada</option>
-              <option value="Autre">Autre</option>
-            </select>
-            <p class="error-message" v-if="formErrors.invoiceAddress?.country">{{ formErrors.invoiceAddress.country }}</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="stateOrDepartment">Département*</label>
+              <input
+                  type="text"
+                  id="stateOrDepartment"
+                  v-model="formData.invoiceAddress.stateOrDepartment"
+                  placeholder="Ex: Paris, Rhône, etc."
+                  required
+                  :class="{ 'error': formErrors.invoiceAddress?.stateOrDepartment }"
+              >
+              <p class="error-message" v-if="formErrors.invoiceAddress?.stateOrDepartment">{{ formErrors.invoiceAddress.stateOrDepartment }}</p>
+            </div>
+
+            <div class="form-group">
+              <label for="country">Pays*</label>
+              <select
+                  id="country"
+                  v-model="formData.invoiceAddress.country"
+                  required
+                  :class="{ 'error': formErrors.invoiceAddress?.country }"
+              >
+                <option value="" disabled selected>Sélectionnez un pays</option>
+                <option value="France">France</option>
+                <option value="Belgique">Belgique</option>
+                <option value="Suisse">Suisse</option>
+                <option value="Luxembourg">Luxembourg</option>
+                <option value="Canada">Canada</option>
+                <option value="Autre">Autre</option>
+              </select>
+              <p class="error-message" v-if="formErrors.invoiceAddress?.country">{{ formErrors.invoiceAddress.country }}</p>
+            </div>
           </div>
         </div>
 
@@ -190,13 +227,13 @@
           <div class="strength-text" :class="passwordStrength.class">{{ passwordStrength.label }}</div>
         </div>
 
-        <button type="submit" class="register-btn" :disabled="isSubmitting">
-          <span v-if="isSubmitting" class="spinner"></span>
+        <button type="submit" class="register-btn" :disabled="isSubmitting || isLoading">
+          <span v-if="isSubmitting || isLoading" class="spinner"></span>
           <span v-else>Créer mon compte</span>
         </button>
 
         <p class="login-option">
-          Vous avez déjà un compte ? <router-link to="/login" class="login-link">Se connecter</router-link>
+          Vous avez déjà un compte ? <router-link to="/connexion" class="login-link">Se connecter</router-link>
         </p>
       </form>
     </div>
@@ -242,6 +279,8 @@
 </template>
 
 <script>
+import { mapGetters, mapActions } from 'vuex';
+
 export default {
   name: 'RegisterPage',
   data() {
@@ -254,8 +293,10 @@ export default {
         confirmPassword: '',
         invoiceAddress: {
           line1: '',
+          line2: '',
           postalCode: '',
           city: '',
+          stateOrDepartment: '',
           country: 'France'
         },
         termsAccepted: false,
@@ -267,6 +308,12 @@ export default {
     };
   },
   computed: {
+    // Récupération des getters du module auth
+    ...mapGetters('auth', [
+      'isAuthenticated',
+      'authError',
+      'isLoading'
+    ]),
     passwordStrength() {
       const password = this.formData.password;
       if (!password) {
@@ -314,6 +361,12 @@ export default {
     }
   },
   methods: {
+    // Récupération des actions du module auth
+    ...mapActions('auth', [
+      'register',
+      'login',
+      'checkAuth'
+    ]),
     validateForm() {
       this.formErrors = {};
       let isValid = true;
@@ -322,11 +375,17 @@ export default {
       if (!this.formData.firstname.trim()) {
         this.formErrors.firstname = 'Le prénom est requis';
         isValid = false;
+      } else if (this.formData.firstname.length < 3) {
+        this.formErrors.firstname = 'Le prénom doit contenir au moins 3 caractères';
+        isValid = false;
       }
 
       // Validation du nom
       if (!this.formData.lastname.trim()) {
         this.formErrors.lastname = 'Le nom est requis';
+        isValid = false;
+      } else if (this.formData.lastname.length < 3) {
+        this.formErrors.lastname = 'Le nom doit contenir au moins 3 caractères';
         isValid = false;
       }
 
@@ -343,8 +402,8 @@ export default {
       if (!this.formData.password) {
         this.formErrors.password = 'Le mot de passe est requis';
         isValid = false;
-      } else if (this.formData.password.length < 8) {
-        this.formErrors.password = 'Le mot de passe doit contenir au moins 8 caractères';
+      } else if (this.formData.password.length < 3) {
+        this.formErrors.password = 'Le mot de passe doit contenir au moins 3 caractères';
         isValid = false;
       }
 
@@ -376,6 +435,13 @@ export default {
       if (!this.formData.invoiceAddress.city.trim()) {
         if (!this.formErrors.invoiceAddress) this.formErrors.invoiceAddress = {};
         this.formErrors.invoiceAddress.city = 'La ville est requise';
+        isValid = false;
+      }
+
+      // Validation du département
+      if (!this.formData.invoiceAddress.stateOrDepartment.trim()) {
+        if (!this.formErrors.invoiceAddress) this.formErrors.invoiceAddress = {};
+        this.formErrors.invoiceAddress.stateOrDepartment = 'Le département est requis';
         isValid = false;
       }
 
@@ -419,38 +485,53 @@ export default {
           password: this.formData.password,
           invoiceAddress: {
             line1: this.formData.invoiceAddress.line1,
+            line2: this.formData.invoiceAddress.line2 || '',
             postalCode: this.formData.invoiceAddress.postalCode,
             city: this.formData.invoiceAddress.city,
+            stateOrDepartment: this.formData.invoiceAddress.stateOrDepartment,
             country: this.formData.invoiceAddress.country
           }
         };
 
-        // Simuler l'appel API (à remplacer par votre véritable appel)
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Appel à l'action register du store Vuex
+        const result = await this.register(userData);
 
-        // Remplacer par votre véritable appel API
-        // const response = await axios.post(`${this.$store.getters.apiUrl}/auth/register`, userData);
+        if (result && result.success) {
+          // Si l'inscription est réussie, on connecte l'utilisateur
+          const loginResult = await this.login({
+            email: this.formData.email,
+            password: this.formData.password
+          });
 
-        // Redirection après inscription réussie
-        this.$router.push('/register-success');
-      } catch (error) {
-        console.error('Erreur lors de l\'inscription:', error);
-
-        // Gestion des erreurs d'API
-        if (error.response) {
-          const { status, data } = error.response;
-
-          if (status === 409 && data.message.includes('email')) {
-            this.formErrors.email = 'Cet email est déjà utilisé';
+          if (loginResult && loginResult.success) {
+            // Redirection vers la page d'accueil ou le tableau de bord
+            this.$router.push('/mon-compte');
           } else {
-            alert('Une erreur est survenue lors de l\'inscription. Veuillez réessayer.');
+            // Redirection vers la page de connexion si l'authentification automatique échoue
+            this.$router.push({
+              path: '/connexion',
+              query: { registered: 'success' }
+            });
           }
         } else {
-          alert('Une erreur de connexion est survenue. Veuillez vérifier votre connexion internet et réessayer.');
+          // L'erreur est gérée par le module Vuex et accessible via le getter authError
+          // Faire défiler jusqu'au message d'erreur global
+          const errorElement = document.querySelector('.global-error');
+          if (errorElement) {
+            errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
         }
+      } catch (error) {
+        console.error('Erreur lors de l\'inscription:', error);
       } finally {
         this.isSubmitting = false;
       }
+    }
+  },
+  created() {
+    // Si l'utilisateur est déjà connecté, rediriger vers la page d'accueil
+    if (this.isAuthenticated) {
+      this.$router.push('/');
     }
   }
 };
@@ -465,6 +546,25 @@ export default {
   grid-template-columns: 3fr 2fr;
   gap: 2rem;
   align-items: start;
+}
+
+/* Message d'erreur global */
+.global-error {
+  background-color: rgba(211, 47, 47, 0.1);
+  color: #d32f2f;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  border-left: 4px solid #d32f2f;
+}
+
+.error-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+  stroke: #d32f2f;
 }
 
 .register-card {

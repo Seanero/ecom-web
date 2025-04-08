@@ -17,20 +17,24 @@
           <li v-else class="user-menu">
             <div class="icon-group">
               <router-link to="/panier" class="icon-link">
-                <i class="fas fa-shopping-cart"></i>
+                <svg class="header-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 256 256">
+                  <path d="M136,120v56a8,8,0,0,1-16,0V120a8,8,0,0,1,16,0Zm36.84-.8-5.6,56A8,8,0,0,0,174.4,184a7.32,7.32,0,0,0,.81,0,8,8,0,0,0,7.95-7.2l5.6-56a8,8,0,0,0-15.92-1.6Zm-89.68,0a8,8,0,0,0-15.92,1.6l5.6,56a8,8,0,0,0,8,7.2,7.32,7.32,0,0,0,.81,0,8,8,0,0,0,7.16-8.76ZM239.93,89.06,224.86,202.12A16.06,16.06,0,0,1,209,216H47a16.06,16.06,0,0,1-15.86-13.88L16.07,89.06A8,8,0,0,1,24,80H68.37L122,18.73a8,8,0,0,1,12,0L187.63,80H232a8,8,0,0,1,7.93,9.06ZM89.63,80h76.74L128,36.15ZM222.86,96H33.14L47,200H209Z"></path>
+                </svg>
                 <span v-if="cartItemCount > 0" class="badge">{{ cartItemCount }}</span>
               </router-link>
               <div class="profile-dropdown">
                 <button class="profile-btn">
-                  <i class="fas fa-user"></i>
+                  <svg class="header-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 256 256">
+                    <path d="M230.92,212c-15.23-26.33-38.7-45.21-66.09-54.16a72,72,0,1,0-73.66,0C63.78,166.78,40.31,185.66,25.08,212a8,8,0,1,0,13.85,8c18.84-32.56,52.14-52,89.07-52s70.23,19.44,89.07,52a8,8,0,1,0,13.85-8ZM72,96a56,56,0,1,1,56,56A56.06,56.06,0,0,1,72,96Z"></path>
+                  </svg>
                 </button>
                 <div class="dropdown-content">
                   <div class="user-info" v-if="user">
-                    <span class="username">{{ user.firstname }} {{ user.lastname }}</span>
+                    <span class="username">{{ user.firstname }} {{ user.lastname.toUpperCase() }}</span>
                     <span class="email">{{ user.email }}</span>
                   </div>
-                  <router-link to="/mon-compte">Mon Compte</router-link>
-                  <router-link to="/commandes">Mes Commandes</router-link>
+                  <router-link to="/compte">Mon Compte</router-link>
+<!--                  <router-link to="/commandes">Mes Commandes</router-link>-->
                   <a href="#" @click.prevent="deconnecter">Déconnexion</a>
                 </div>
               </div>
@@ -49,18 +53,21 @@ export default {
   name: 'HeaderComponent',
   data() {
     return {
-      cartItemCount: 0 // À remplacer par votre logique de panier ou mapGetter
     }
   },
   computed: {
     ...mapGetters('auth', [
       'isAuthenticated',
       'user'
+    ]),
+    ...mapGetters('cart', [
+        'cartItemCount'
     ])
   },
   methods: {
     ...mapActions('auth', [
-      'logout'
+      'logout',
+      'checkAuth'
     ]),
     async deconnecter() {
       try {
@@ -78,9 +85,16 @@ export default {
       }
     }
   },
-  created() {
+  async created() {
+    // Vérification de l'état d'authentification au chargement du composant
+    await this.checkAuth();
+    console.log("État d'authentification:", this.isAuthenticated);
+
     // Si vous avez un module panier, vous pourriez charger le nombre d'articles ici
     // this.cartItemCount = this.$store.getters['cart/itemCount'];
+
+    // Pour les tests, on peut définir une valeur
+    this.cartItemCount = 3;
   }
 };
 </script>
@@ -127,6 +141,8 @@ nav ul {
   display: flex;
   list-style: none;
   align-items: center;
+  margin: 0;
+  padding: 0;
 }
 
 nav ul li {
@@ -156,15 +172,35 @@ nav ul li a:hover {
   color: var(--dark-color);
 }
 
+.user-menu {
+  display: flex;
+  align-items: center;
+}
+
 .icon-group {
   display: flex;
   align-items: center;
 }
 
+/* Style pour les icônes SVG */
+.header-icon {
+  width: 24px;
+  height: 24px;
+  fill: white; /* Couleur blanche pour les icônes */
+  transition: fill 0.3s ease;
+}
+
 .icon-link {
-  margin-right: 1rem;
+  margin-right: 1.5rem;
   position: relative;
-  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  color: white;
+  text-decoration: none;
+}
+
+.icon-link:hover .header-icon {
+  fill: var(--secondary-color);
 }
 
 .badge {
@@ -177,6 +213,11 @@ nav ul li a:hover {
   padding: 2px 6px;
   font-size: 0.7rem;
   font-weight: bold;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .profile-dropdown {
@@ -187,9 +228,14 @@ nav ul li a:hover {
 .profile-btn {
   background: none;
   border: none;
-  color: white;
+  padding: 0;
   cursor: pointer;
-  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+}
+
+.profile-btn:hover .header-icon {
+  fill: var(--secondary-color);
 }
 
 .dropdown-content {

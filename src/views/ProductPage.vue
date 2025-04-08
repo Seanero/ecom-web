@@ -1,5 +1,6 @@
 <script>
 import axios from 'axios';
+import {mapActions} from "vuex";
 
 export default {
   name: "ProductPage",
@@ -11,6 +12,11 @@ export default {
       product: {},
       category: {}
     }
+  },
+  methods: {
+    ...mapActions({
+      addToCart: 'cart/addToCart'
+    })
   },
   async mounted() {
     try {
@@ -112,7 +118,7 @@ export default {
             <input type="number" id="quantity" name="quantity" min="1" :max="product.stock" value="1">
           </div>
           <div class="product-actions">
-            <button class="btn add-to-cart">Ajouter au panier</button>
+            <button class="btn add-to-cart" @click="addToCart(product)">Ajouter au panier</button>
             <button class="btn add-to-wishlist">❤ Wishlist</button>
           </div>
           <div class="product-meta">
